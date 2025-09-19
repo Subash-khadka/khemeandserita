@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sarita loves Kheme? — Prank</title>
+<style>
+  :root{
+    --bg:#fff7f9;
+    --card:#fff;
+    --accent:#ff4d6d;
+    --muted:#6b6b6b;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;}
+  body{display:grid;place-items:center;background:linear-gradient(135deg,var(--bg),#fff);padding:20px;}
+  .card{
+    width:min(760px,96vw);
+    background:var(--card);
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    padding:36px;
+    position:relative;
+    overflow:hidden;
+  }
+  h1{margin:0 0 8px;font-size:28px;color:#222;}
+  p{margin:0 0 24px;color:var(--muted);}
+  .stage{
+    position:relative;
+    height:260px;
+    border-radius:12px;
+    background:linear-gradient(180deg,#fff,#fff0);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .question{font-size:20px;font-weight:600;color:#333;}
+  .controls{
+    display:flex;
+    gap:20px;
+    margin-top:26px;
+    align-items:center;
+  }
+  .btn{
+    padding:12px 22px;
+    border-radius:999px;
+    border:0;
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
+    user-select:none;
+    transition:transform .12s ease,box-shadow .12s;
+  }
+  .btn:active{transform:scale(.96);}
+  .yes{background:linear-gradient(90deg,#ffecec,#ffdbe6);color:var(--accent);box-shadow:0 6px 18px rgba(255,77,109,0.18);}
+  .no{
+    position:absolute;
+    left:50%;
+    transform:translate(-50%,0);
+    top:60%;
+    background:#f0f0f0;
+    color:#333;
+    padding:10px 18px;
+    border-radius:10px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  }
+  /* popup */
+  .popup{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,0.3);
+    backdrop-filter:blur(2px);
+  }
+  .popup .box{
+    background:#fff;
+    padding:26px;
+    border-radius:14px;
+    text-align:center;
+    box-shadow:0 12px 40px rgba(0,0,0,0.2);
+    position:relative;
+    overflow:hidden;
+  }
+  .popup .heart{font-size:46px;color:var(--accent);animation:pulse 900ms infinite;position:relative;z-index:1;}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+  .lyrics{font-size:16px;color:#444;margin:12px 0;font-weight:bold;z-index:1;position:relative;}
+  .hint{font-size:13px;color:#999;margin-top:12px;}
+  .timer{margin-left:auto;font-size:15px;color:var(--muted);}
+  /* photos animation behind text */
+  .photo-run{
+    position:absolute;
+    bottom:10px;
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    object-fit:cover;
+    animation-duration:3s;
+    animation-fill-mode:forwards;
+    z-index:0; /* behind text */
+  }
+  .photo-left{left:-100px;animation-name:runLeft;}
+  .photo-right{right:-100px;animation-name:runRight;}
+  @keyframes runLeft{
+    0%{left:-100px;bottom:10px;}
+    100%{left:50%;bottom:50%;transform:translate(-120%,50%);}
+  }
+  @keyframes runRight{
+    0%{right:-100px;bottom:10px;}
+    100%{right:50%;bottom:50%;transform:translate(120%,50%);}
+  }
+  .congrats{margin-top:20px;font-size:22px;font-weight:700;color:var(--accent);opacity:0;animation:fadeIn 3s forwards;animation-delay:3s;}
+  @keyframes fadeIn{to{opacity:1;}}
+  @media (max-width:420px){.card{padding:20px}.stage{height:200px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Does Kheme love Sarita?</h1>
+  <p>Click the right answer — 😉</p>
+  <div class="stage" id="stage">
+    <div class="question">Are you sure about this?</div>
+    <button id="noBtn" class="btn no">No</button>
+  </div>
+  <div class="controls">
+    <button id="yesBtn" class="btn yes">Yes</button>
+    <div class="hint">We all know Kheme loves Sarita <strong>No</strong> — keep loving</div>
+    <div class="timer" id="timer">10s</div>
+  </div>
+</div>
+
+<div class="popup" id="popup">
+  <div class="box">
+    <div class="heart">❤️</div>
+    <h2>Kheme loves Sarita!</h2>
+    <p class="lyrics">"Just say you love me, I will be there forever..." 🎶</p>
+    <img src="sarita.png" class="photo-run photo-left" id="photoLeft" alt="Sarita" />
+    <img src="kheme.png" class="photo-run photo-right" id="photoRight" alt="Kheme" />
+    <div class="congrats">🎉 Congratulations for Love State 🎉</div>
+    <div style="margin-top:12px"><button id="closePopup" class="btn">Close</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const stage = document.getElementById('stage');
+  const noBtn = document.getElementById('noBtn');
+  const yesBtn = document.getElementById('yesBtn');
+  const popup = document.getElementById('popup');
+  const closePopup = document.getElementById('closePopup');
+  const timerEl = document.getElementById('timer');
+  const photoLeft = document.getElementById('photoLeft');
+  const photoRight = document.getElementById('photoRight');
+
+  function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+  function centerNo(){
+    const R = stage.getBoundingClientRect();
+    noBtn.style.left=(R.width/2)+'px';
+    noBtn.style.top=(R.height*0.6)+'px';
+    noBtn.style.transform='translate(-50%,-50%)';
+  }
+  centerNo();
+
+  function moveNoButton(mouseX,mouseY){
+    const rect = stage.getBoundingClientRect();
+    const btnRect = noBtn.getBoundingClientRect();
+    const btnX = btnRect.left - rect.left + btnRect.width/2;
+    const btnY = btnRect.top - rect.top + btnRect.height/2;
+    const dx = mouseX-btnX;
+    const dy = mouseY-btnY;
+    const dist=Math.hypot(dx,dy);
+    const escapeRadius=250;
+    if(dist<escapeRadius){
+      const angle=Math.atan2(dy,dx);
+      const rects=[{x:40,y:40},{x:rect.width-40,y:40},{x:40,y:rect.height-40},{x:rect.width-40,y:rect.height-40}];
+      const pick=Math.random()<0.3?rects[Math.floor(Math.random()*4)]:null;
+      let newX,newY;
+      if(pick){newX=pick.x; newY=pick.y;}
+      else{
+        let moveX=-Math.cos(angle)*(escapeRadius-dist+80)+(Math.random()-0.5)*100;
+        let moveY=-Math.sin(angle)*(escapeRadius-dist+80)+(Math.random()-0.5)*100;
+        newX=clamp(btnX+moveX,40,rect.width-40);
+        newY=clamp(btnY+moveY,30,rect.height-30);
+      }
+      noBtn.style.left=newX+'px';
+      noBtn.style.top=newY+'px';
+      noBtn.style.transform='translate(-50%,-50%)';
+    }
+  }
+
+  stage.addEventListener('mousemove',e=>{moveNoButton(e.clientX-stage.getBoundingClientRect().left,e.clientY-stage.getBoundingClientRect().top);});
+  stage.addEventListener('touchmove',e=>{
+    const t=e.touches[0];
+    moveNoButton(t.clientX-stage.getBoundingClientRect().left,t.clientY-stage.getBoundingClientRect().top);
+  },{passive:true});
+  noBtn.addEventListener('click',e=>{e.preventDefault(); alert("Whoa — you caught 'No'! 😅");});
+
+  function showPopup(){
+    popup.style.display='flex';
+    photoLeft.style.animationPlayState='running';
+    photoRight.style.animationPlayState='running';
+  }
+
+  // 🌟 Emoji Explosion function
+  function emojiExplosion(x,y){
+    for(let i=0;i<30;i++){
+      const e=document.createElement('div');
+      e.textContent=['❤️','💖','💘','💝'][Math.floor(Math.random()*4)];
+      e.style.position='fixed';
+      e.style.left=x+'px';
+      e.style.top=y+'px';
+      e.style.fontSize=(Math.random()*20+16)+'px';
+      e.style.pointerEvents='none';
+      e.style.transition='all 1.2s ease-out';
+      document.body.appendChild(e);
+      const angle=Math.random()*2*Math.PI;
+      const distance=Math.random()*200+50;
+      const finalX=x+Math.cos(angle)*distance;
+      const finalY=y+Math.sin(angle)*distance;
+      requestAnimationFrame(()=>{e.style.transform=`translate(${finalX-x}px,${finalY-y}px)`; e.style.opacity=0;});
+      setTimeout(()=>e.remove(),1200);
+    }
+  }
+
+  // override showPopup to include explosion
+  const oldShowPopup = showPopup;
+  showPopup = function(){
+    oldShowPopup();
+    emojiExplosion(window.innerWidth/2,window.innerHeight/2);
+  }
+
+  yesBtn.addEventListener('click',()=>{showPopup();});
+  closePopup.addEventListener('click',()=>{popup.style.display='none';});
+  window.addEventListener('resize',()=>{centerNo();});
+
+  // timer with popup + explosion
+  let time=10;
+  timerEl.textContent=time+'s';
+  const countdown=setInterval(()=>{
+    time--;
+    timerEl.textContent=time+'s';
+    if(time<=0){
+      clearInterval(countdown);
+      showPopup();
+    }
+  },1000);
+
+})();
+</script>
+
+<script>
+// Falling hearts
+function createEmoji(){
+  const e=document.createElement('div');
+  e.textContent="❤️";
+  e.style.position='fixed';
+  e.style.left=Math.random()*100+'vw';
+  e.style.top='-20px';
+  e.style.fontSize=(Math.random()*20+20)+'px';
+  e.style.opacity=Math.random();
+  e.style.pointerEvents='none';
+  e.style.animation=`fall ${Math.random()*3+2}s linear`;
+  document.body.appendChild(e);
+  setTimeout(()=>{e.remove();},5000);
+}
+setInterval(createEmoji,500);
+const style=document.createElement('style');
+style.textContent=`@keyframes fall{to{transform:translateY(110vh);opacity:0;}}`;
+document.head.appendChild(style);
+</script>
+
+</body>
+</html>
